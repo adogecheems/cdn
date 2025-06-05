@@ -1,38 +1,50 @@
-import { nodeResolve } from "@rollup/plugin-node-resolve";
-import { createFilter } from "@rollup/pluginutils";
+import terser from '@rollup/plugin-terser';
+import alias from '@rollup/plugin-alias';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-function string(opts = {}) {
-    if (!opts.include) {
-        throw Error("include option should be specified");
-    }
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-    const filter = createFilter(opts.include, opts.exclude);
+function findCubismDir() {
+  const buildDir = path.join(__dirname, 'build');
+  let candidates = fs.readdirSync(buildDir)
+    .filter(f => f.startsWith('CubismSdkForWeb-') && fs.statSync(path.join(buildDir, f)).isDirectory());
+  if (candidates.length === 0) {
+    candidates = ['CubismSdkForWeb-5-r.4'];
+  }
+  return path.join(buildDir, candidates[0]);
+}
 
-    return {
-        name: "string",
+const cubismDir = findCubismDir();
 
-        transform(code, id) {
-            if (filter(id)) {
-                return {
-                    code: `export default ${JSON.stringify(code)};`,
-                    map: { mappings: "" }
-                };
-            }
-        },
-
-        renderChunk(code, chunk, outputOptions = {}) {
-            return `/*!
+export default {
+  input: 'build/waifu-tips.js',
+  output: {
+    dir: 'dist/',
+    format: 'esm',
+    chunkFileNames: 'chunk/[name].js',
+    sourcemap: true,
+    banner: `/*!
  * Live2D Widget
  * https://github.com/stevenjoezhang/live2d-widget
  */
-` + code;
+`
+  },
+  plugins: [
+    alias({
+      entries: [
+        {
+          find: '@demo',
+          replacement: path.resolve(cubismDir, 'Samples/TypeScript/Demo/src/')
+        },
+        {
+          find: '@framework',
+          replacement: path.resolve(cubismDir, 'Framework/src/')
         }
-    };
-}
-
-export default {
-    input: "src/waifu-tips.js",
-    plugins: [nodeResolve(), string({
-        include: "**/*.svg",
-    })]
+      ]
+    }),
+    terser(),
+  ],
+  context: 'this',
 };
