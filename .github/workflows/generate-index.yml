@@ -1,0 +1,17 @@
+name: Generate Static Indexs
+
+on:
+  push:
+    paths:
+      - "public/**"
+      - ".github/workflows/generate-index.yml"
+
+jobs:
+  generate-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: gacts/directory-listing@v1
+        with:
+          target: ./public
