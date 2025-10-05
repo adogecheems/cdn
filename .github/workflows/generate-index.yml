@@ -2,6 +2,8 @@ name: Generate Static Indexs
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "public/**"
       - ".github/workflows/generate-index.yml"
@@ -10,8 +12,19 @@ jobs:
   generate-index:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - uses: gacts/directory-listing@v1
+      - name: Generate index files
+        uses: gacts/directory-listing@v1
         with:
           target: ./public
+
+      - name: Push changes
+        uses: actions-js/push@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: public
+          message: "chore: update directory index [skip ci]"
+          force: false
+          directory: ./public
